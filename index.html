@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AP Research Live Image Generation Demo</title>
+    <style>
+        @font-face {
+            font-family: 'SF Pro Display';
+            src: local('SF Pro Display'), local('SFProDisplay');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        :root {
+            --accent-color: #df222f;
+            --black: #000000;
+            --white: #ffffff;
+            --dark-gray: #000000;
+            --light-gray: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--black);
+            color: var(--white);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 2rem;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            text-transform: none;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            color: var(--accent-color);
+            letter-spacing: 0.05em;
+            text-transform: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+        }
+
+        .control-panel {
+            background-color: var(--dark-gray);
+            padding: 2rem;
+            border-radius: 2px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-group {
+            margin-bottom: 2rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            letter-spacing: 0.03em;
+            text-transform: none;
+        }
+
+        .prompt-input {
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--black);
+            border: 1px solid var(--light-gray);
+            color: var(--white);
+            font-family: inherit;
+            font-size: 1rem;
+            resize: none;
+            min-height: 120px;
+            border-radius: 2px;
+        }
+
+        .generate-btn {
+            background-color: var(--accent-color);
+            color: var(--white);
+            border: none;
+            padding: 1rem 2rem;
+            font-family: inherit;
+            font-size: 1rem;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-radius: 2px;
+            align-self: flex-start;
+        }
+
+        .generate-btn:hover {
+            background-color: #c41e29;
+        }
+
+        .generate-btn:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+
+        .display-area {
+            position: relative;
+            aspect-ratio: 4/3;
+            background-color: var(--dark-gray);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .image-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .placeholder-text {
+            color: var(--light-gray);
+            font-size: 1.2rem;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .result-image {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .noise-overlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+        }
+
+        .info-panel {
+            margin-top: 1rem;
+            background-color: var(--dark-gray);
+            padding: 1rem;
+            border-radius: 2px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .timer {
+            font-size: 1.2rem;
+            font-weight: 500;
+            letter-spacing: 0.03em;
+        }
+
+        .step-counter {
+            font-size: 1.2rem;
+            color: var(--accent-color);
+        }
+
+        .status-bar {
+            width: 100%;
+            height: 4px;
+            background-color: var(--black);
+            margin-top: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress {
+            position: absolute;
+            height: 100%;
+            width: 0;
+            background-color: var(--accent-color);
+            transition: width 0.1s linear;
+        }
+
+        .leica-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background-color: var(--accent-color);
+            color: var(--white);
+            padding: 0.25rem 0.5rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            border-radius: 2px;
+        }
+        
+        .completion-message {
+            margin-top: 1.5rem;
+            color: var(--accent-color);
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            font-size: 0.9rem;
+            letter-spacing: 0.03em;
+        }
+    </style>
+</head>
+<body>
+    <div class="leica-badge">Live Image Generation Demo</div>
+    
+    <header>
+        <h1>AP Research</h1>
+        <div class="subtitle"> </div>
+    </header>
+    
+    <div class="container">
+        <div class="control-panel">
+            <div class="input-group">
+                <label for="prompt">Image Prompt</label>
+                <textarea id="prompt" class="prompt-input" placeholder=" "></textarea>
+            </div>
+            <button id="generate-btn" class="generate-btn">Generate</button>
+            <div class="completion-message" id="completion-message">Generated in 8.34 seconds</div>
+        </div>
+        
+        <div class="display-area">
+            <div class="image-container">
+                <div class="placeholder-text">Your generated image will appear here</div>
+                <img id="result-image" class="result-image" alt="Generated image">
+                <canvas id="noise-overlay" class="noise-overlay"></canvas>
+            </div>
+            
+            <div class="info-panel">
+                <div class="timer" id="timer">Time: 0.00s</div>
+                <div class="step-counter" id="step-counter">Step: 0/25</div>
+                <div class="status-bar">
+                    <div class="progress" id="progress-bar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const generateBtn = document.getElementById('generate-btn');
+            const resultImage = document.getElementById('result-image');
+            const noiseCanvas = document.getElementById('noise-overlay');
+            const ctx = noiseCanvas.getContext('2d');
+            const timerElement = document.getElementById('timer');
+            const stepCounter = document.getElementById('step-counter');
+            const progressBar = document.getElementById('progress-bar');
+            const placeholderText = document.querySelector('.placeholder-text');
+            const completionMessage = document.getElementById('completion-message');
+            
+            let isGenerating = false;
+            let startTime;
+            let animationInterval;
+            let currentStep = 0;
+            
+            // Set canvas size
+            function resizeCanvas() {
+                const container = document.querySelector('.image-container');
+                noiseCanvas.width = container.offsetWidth;
+                noiseCanvas.height = container.offsetHeight;
+            }
+            
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+            
+            // Generate random color noise
+            function generateNoise(opacity) {
+                ctx.clearRect(0, 0, noiseCanvas.width, noiseCanvas.height);
+                
+                const imageData = ctx.createImageData(noiseCanvas.width, noiseCanvas.height);
+                const data = imageData.data;
+                
+                for (let i = 0; i < data.length; i += 4) {
+                    data[i] = Math.floor(Math.random() * 256);     // red
+                    data[i + 1] = Math.floor(Math.random() * 256); // green
+                    data[i + 2] = Math.floor(Math.random() * 256); // blue
+                    data[i + 3] = 255 * opacity;                   // alpha
+                }
+                
+                ctx.putImageData(imageData, 0, 0);
+                noiseCanvas.style.opacity = '1';
+            }
+            
+            // Update timer display
+            function updateTimer() {
+                const elapsed = (Date.now() - startTime) / 1000;
+                timerElement.textContent = `Time: ${elapsed.toFixed(2)}s`;
+                return elapsed;
+            }
+            
+            // The main generation process
+            function startGeneration() {
+                if (isGenerating) return;
+                
+                isGenerating = true;
+                generateBtn.disabled = true;
+                currentStep = 0;
+                startTime = Date.now();
+                
+                // Hide completion message when starting new generation
+                completionMessage.style.opacity = '0';
+                
+                // Show the base image and set its opacity to 0
+                resultImage.src = 'image.jpeg';
+                resultImage.style.opacity = '0';
+                placeholderText.style.display = 'none';
+                
+                const totalSteps = 25;
+                const totalTime = 8.34; // seconds
+                const intervalTime = (totalTime * 1000) / totalSteps;
+                
+                animationInterval = setInterval(() => {
+                    const elapsed = updateTimer();
+                    currentStep++;
+                    
+                    // Update step counter
+                    stepCounter.textContent = `Step: ${currentStep}/${totalSteps}`;
+                    
+                    // Update progress bar
+                    const progress = (currentStep / totalSteps) * 100;
+                    progressBar.style.width = `${progress}%`;
+                    
+                    // Generate noise with decreasing opacity
+                    const noiseOpacity = 1 - (currentStep / totalSteps);
+                    generateNoise(noiseOpacity);
+                    
+                    // Gradually reveal the image
+                    resultImage.style.opacity = currentStep / totalSteps;
+                    
+                    // Check if we've reached the end
+                    if (currentStep >= totalSteps || elapsed >= totalTime) {
+                        clearInterval(animationInterval);
+                        
+                        // Make sure we show the final state
+                        resultImage.style.opacity = '1';
+                        noiseCanvas.style.opacity = '0';
+                        
+                        // Final timer update to match exact specified time
+                        if (elapsed < totalTime) {
+                            setTimeout(() => {
+                                updateTimer();
+                                // Show completion message
+                                completionMessage.style.opacity = '1';
+                                // Allow generating again
+                                isGenerating = false;
+                                generateBtn.disabled = false;
+                            }, (totalTime - elapsed) * 1000);
+                        } else {
+                            // Show completion message
+                            completionMessage.style.opacity = '1';
+                            // Allow generating again
+                            isGenerating = false;
+                            generateBtn.disabled = false;
+                        }
+                    }
+                }, intervalTime);
+            }
+            
+            // Set up event listeners
+            generateBtn.addEventListener('click', startGeneration);
+            
+            // Handle image load error
+            resultImage.addEventListener('error', function() {
+                // If image.jpeg doesn't exist, we'll create a placeholder
+                console.warn('Warning: image.jpeg not found. Using placeholder.');
+                
+                // Create a temporary canvas to draw a placeholder image
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = 800;  // 4:3 aspect ratio
+                tempCanvas.height = 600;
+                const tempCtx = tempCanvas.getContext('2d');
+                
+                // Fill with gray background
+                tempCtx.fillStyle = '#333';
+                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                
+                // Add some text
+                tempCtx.fillStyle = '#fff';
+                tempCtx.font = '30px "SF Pro Display", sans-serif';
+                tempCtx.textAlign = 'center';
+                tempCtx.fillText('Image Placeholder', tempCanvas.width / 2, tempCanvas.height / 2);
+                tempCtx.font = '20px "SF Pro Display", sans-serif';
+                tempCtx.fillText('(image.jpeg not found)', tempCanvas.width / 2, tempCanvas.height / 2 + 40);
+                
+                // Use this canvas as our image source
+                resultImage.src = tempCanvas.toDataURL('image/jpeg');
+            });
+        });
+    </script>
+</body>
+</html>
