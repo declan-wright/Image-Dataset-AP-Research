@@ -3,27 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AP Research Live Image Generation Demo</title>
+    <!-- Changed Title -->
+    <title>AP Research Live Demo</title>
     <style>
         @font-face {
             font-family: 'SF Pro Display';
-            src: local('SF Pro Display'), local('SFProDisplay');
-            font-weight: normal;
+            src: local('SF Pro Display'), local('SFProDisplay'); /* Basic local font lookup */
+            font-weight: normal; /* Define weights if you have specific files */
             font-style: normal;
         }
+        @font-face {
+            font-family: 'SF Pro Display';
+            src: local('SF Pro Display Semibold'), local('SFProDisplay-Semibold');
+            font-weight: 600;
+            font-style: normal;
+        }
+        /* Add more @font-face rules for other weights (Light, Medium, Bold) if needed */
 
         :root {
-            --accent-color: #df222f;
             --black: #000000;
             --white: #ffffff;
-            --dark-gray: #000000;
-            --light-gray: #ffffff;
+            --semi-white: rgba(255, 255, 255, 0.7); /* For secondary text */
+            --popup-bg: rgba(0, 0, 0, 0.85); /* Dark transparent background for popup */
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+        }
+
+        html {
+             /* Smooth scrolling for chat */
+            scroll-behavior: smooth;
         }
 
         body {
@@ -35,126 +47,113 @@
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            padding: 2rem;
+            padding: 3rem 2rem; /* More vertical padding, standard horizontal */
         }
 
         header {
-            margin-bottom: 2rem;
+            margin-bottom: 3rem; /* Increased spacing */
             width: 100%;
-            max-width: 1200px;
+            max-width: 700px; /* Constrain width for better readability */
+            display: flex;
+            flex-direction: column; /* Stack title and subtitle */
+            align-items: flex-start; /* Align left */
         }
 
         h1 {
-            font-size: 2.5rem;
+            font-size: 2.2rem; /* Slightly smaller */
             font-weight: 600;
-            letter-spacing: -0.02em;
-            text-transform: none;
-            margin-bottom: 0.5rem;
+            letter-spacing: -0.01em;
+            line-height: 1.2;
+            text-transform: none; /* Ensure no unwanted transforms */
+            color: var(--white);
         }
 
-        .subtitle {
-            font-size: 1rem;
-            color: var(--accent-color);
-            letter-spacing: 0.05em;
-            text-transform: none;
-            margin-bottom: 1.5rem;
-        }
+        /* Removed subtitle style as element is gone */
 
         .container {
             width: 100%;
-            max-width: 1200px;
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 2rem;
-        }
-
-        .control-panel {
-            background-color: var(--dark-gray);
-            padding: 2rem;
-            border-radius: 2px;
+            max-width: 700px; /* Match header width */
             display: flex;
             flex-direction: column;
+            flex-grow: 1; /* Allow container to fill space */
+            justify-content: flex-end; /* Anchor input area to bottom */
+            position: relative; /* Needed for sticky input positioning context */
         }
 
-        .input-group {
-            margin-bottom: 2rem;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-            letter-spacing: 0.03em;
-            text-transform: none;
-        }
-
-        .prompt-input {
+        .chat-area {
+            flex-grow: 1; /* Allow chat to take up available space */
             width: 100%;
-            padding: 1rem;
-            background-color: var(--black);
-            border: 1px solid var(--light-gray);
-            color: var(--white);
-            font-family: inherit;
-            font-size: 1rem;
-            resize: none;
-            min-height: 120px;
-            border-radius: 2px;
+            /* No background, no border, no padding here */
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem; /* Increased gap between messages is key */
+            margin-bottom: 2rem; /* Space above input area */
+            padding-right: 10px; /* Prevent scrollbar overlap */
+            /* Ensure chat area can scroll under sticky input */
+            padding-bottom: 80px; /* Adjust based on input area height */
         }
 
-        .generate-btn {
-            background-color: var(--accent-color);
-            color: var(--white);
-            border: none;
-            padding: 1rem 2rem;
-            font-family: inherit;
-            font-size: 1rem;
-            letter-spacing: 0.05em;
-            cursor: pointer;
-            transition: background-color 0.2s;
+        /* Custom Scrollbar (Optional but fits the aesthetic) */
+        .chat-area::-webkit-scrollbar {
+            width: 4px;
+        }
+        .chat-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .chat-area::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
             border-radius: 2px;
+        }
+        .chat-area::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .message {
+            display: flex;
+            flex-direction: column;
+            max-width: 75%; /* Slightly less max width */
+            line-height: 1.5;
+            font-size: 1rem;
+            font-weight: 400; /* Regular weight for messages */
+            /* No background, no padding, no border-radius */
+            color: var(--white); /* Explicitly white */
+        }
+
+        .user-message {
+            align-self: flex-end;
+            text-align: right;
+        }
+
+        .bot-message {
             align-self: flex-start;
+            text-align: left;
         }
 
-        .generate-btn:hover {
-            background-color: #c41e29;
-        }
-
-        .generate-btn:disabled {
-            background-color: #666;
-            cursor: not-allowed;
-        }
-
-        .display-area {
-            position: relative;
-            aspect-ratio: 4/3;
-            background-color: var(--dark-gray);
-            border-radius: 2px;
-            overflow: hidden;
+        /* Style the intro/status text differently */
+        .bot-message .status-text {
+             color: var(--semi-white);
+             font-size: 0.95rem;
         }
 
         .image-container {
-            position: relative;
             width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .placeholder-text {
-            color: var(--light-gray);
-            font-size: 1.2rem;
-            text-align: center;
-            padding: 2rem;
+            margin-top: 0.8rem; /* Space between text and image */
+            position: relative;
+            /* No border-radius, no overflow hidden necessary without radius */
+            aspect-ratio: 4/3; /* Maintain aspect ratio */
+            background-color: #111; /* Very dark placeholder bg */
         }
 
         .result-image {
-            position: absolute;
+            display: block; /* Remove potential bottom space */
             width: 100%;
             height: 100%;
             object-fit: cover;
+            /* No border-radius */
             opacity: 0;
-            transition: opacity 0.3s;
+            transition: opacity 0.3s ease-in-out; /* Smoother transition */
+            cursor: pointer; /* Indicate image is clickable */
         }
 
         .noise-overlay {
@@ -164,253 +163,488 @@
             top: 0;
             left: 0;
             opacity: 0;
+            pointer-events: none; /* Allow clicks to pass through to image */
+            /* No border-radius */
         }
 
-        .info-panel {
-            margin-top: 1rem;
-            background-color: var(--dark-gray);
-            padding: 1rem;
-            border-radius: 2px;
+        .generation-info {
+            margin-top: 0.6rem;
+            font-size: 0.75rem; /* Smaller */
+            font-weight: 400;
+            color: var(--semi-white); /* Subdued color */
             display: flex;
             justify-content: space-between;
+            padding: 0 2px; /* Tiny padding to align text slightly */
         }
 
-        .timer {
-            font-size: 1.2rem;
-            font-weight: 500;
-            letter-spacing: 0.03em;
-        }
-
-        .step-counter {
-            font-size: 1.2rem;
-            color: var(--accent-color);
-        }
-
-        .status-bar {
+        .input-area {
+            display: flex;
+            gap: 1rem; /* Keep gap between input and button */
             width: 100%;
-            height: 4px;
-            background-color: var(--black);
-            margin-top: 0.5rem;
+            padding: 0.5rem 0; /* Add some vertical padding for breathing room */
+            /* No background */
+            position: sticky; /* Keep input area visible */
+            bottom: 1rem; /* Stick near the bottom with some space */
+            background-color: var(--black); /* Ensure it overlays scrolled content */
+            z-index: 10; /* Ensure input is above chat */
+        }
+
+        .prompt-input {
+            flex-grow: 1;
+            padding: 0.9rem 1rem; /* Comfortable padding */
+            background-color: transparent; /* No background */
+            border: none; /* No border */
+            color: var(--white);
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 400;
+            resize: none;
+            line-height: 1.5;
+            /* No border-radius */
+            outline: none; /* Remove focus outline */
+            height: auto; /* Start small */
+            min-height: calc(1.5em + 1.8rem); /* Minimum height matching padding */
+            max-height: 150px; /* Limit expansion */
+            overflow-y: auto; /* Add scroll if needed */
+        }
+
+        .prompt-input::placeholder {
+            color: var(--semi-white);
+            opacity: 0.8;
+        }
+
+        .send-btn {
+            background-color: transparent; /* No background */
+            color: var(--white);
+            border: none;
+            padding: 0.9rem 1.5rem; /* Match input padding vertically */
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 600; /* Semibold for button text */
+            letter-spacing: 0; /* Reset letter spacing */
+            cursor: pointer;
+            transition: opacity 0.2s ease-in-out; /* Fade transition */
+            /* No border-radius */
+            align-self: flex-end; /* Align button to bottom if input grows */
+            line-height: 1.5; /* Match input line-height */
+            height: calc(1.5em + 1.8rem); /* Match input min-height */
+        }
+
+        .send-btn:hover {
+            opacity: 0.7; /* Fade slightly on hover */
+        }
+
+        .send-btn:disabled {
+            opacity: 0.3; /* Much dimmer when disabled */
+            cursor: not-allowed;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 2px; /* Thinner progress bar */
+            background-color: transparent; /* No background track */
+            margin-top: 0.6rem;
             position: relative;
             overflow: hidden;
+            /* No border-radius */
         }
 
         .progress {
             position: absolute;
             height: 100%;
             width: 0;
-            background-color: var(--accent-color);
+            background-color: var(--white); /* White progress */
             transition: width 0.1s linear;
+            /* No border-radius */
         }
 
-        .leica-badge {
+        /* --- Styles for Image Popup (Lightbox) --- */
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--popup-bg);
+            display: none; /* Hidden by default */
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            z-index: 1000; /* Ensure it's on top */
+            cursor: pointer; /* Indicate clicking background closes it */
+            opacity: 0; /* Start transparent for fade-in */
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .lightbox.show {
+            display: flex; /* Show it */
+            opacity: 1; /* Fade it in */
+        }
+
+        .lightbox img {
+            display: block;
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            cursor: default; /* Don't show close cursor on image itself */
+        }
+
+        .lightbox-close {
             position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background-color: var(--accent-color);
+            top: 1.5rem;
+            right: 1.5rem;
+            font-size: 2rem;
+            font-weight: 300; /* Lighter weight for close icon */
+            color: var(--semi-white);
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s ease-in-out;
+        }
+        .lightbox-close:hover {
             color: var(--white);
-            padding: 0.25rem 0.5rem;
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.05em;
-            border-radius: 2px;
         }
-        
-        .completion-message {
-            margin-top: 1.5rem;
-            color: var(--accent-color);
-            font-weight: 500;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            font-size: 0.9rem;
-            letter-spacing: 0.03em;
-        }
+        /* --- End Lightbox Styles --- */
+
+
     </style>
 </head>
 <body>
-    <div class="leica-badge">Live Image Generation Demo</div>
-    
+    <!-- Header updated -->
     <header>
-        <h1>AP Research</h1>
-        <div class="subtitle"> </div>
+        <h1>AP Research Live Demo</h1>
+        <!-- Subtitle removed -->
     </header>
-    
+
     <div class="container">
-        <div class="control-panel">
-            <div class="input-group">
-                <label for="prompt">Image Prompt</label>
-                <textarea id="prompt" class="prompt-input" placeholder=" "></textarea>
-            </div>
-            <button id="generate-btn" class="generate-btn">Generate</button>
-            <div class="completion-message" id="completion-message">Generated in 8.34 seconds</div>
+        <div class="chat-area" id="chat-area">
+            <!-- Initial Bot message removed -->
         </div>
-        
-        <div class="display-area">
-            <div class="image-container">
-                <div class="placeholder-text">Your generated image will appear here</div>
-                <img id="result-image" class="result-image" alt="Generated image">
-                <canvas id="noise-overlay" class="noise-overlay"></canvas>
-            </div>
-            
-            <div class="info-panel">
-                <div class="timer" id="timer">Time: 0.00s</div>
-                <div class="step-counter" id="step-counter">Step: 0/25</div>
-                <div class="status-bar">
-                    <div class="progress" id="progress-bar"></div>
-                </div>
-            </div>
+
+        <!-- Input area -->
+        <div class="input-area">
+            <textarea id="prompt-input" class="prompt-input" placeholder="Describe image..." rows="1"></textarea>
+            <button id="send-btn" class="send-btn">Send</button>
         </div>
+    </div>
+
+    <!-- Lightbox Structure -->
+    <div id="lightbox" class="lightbox">
+        <span id="lightbox-close" class="lightbox-close">×</span>
+        <img id="lightbox-img" src="" alt="Enlarged image view">
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const generateBtn = document.getElementById('generate-btn');
-            const resultImage = document.getElementById('result-image');
-            const noiseCanvas = document.getElementById('noise-overlay');
-            const ctx = noiseCanvas.getContext('2d');
-            const timerElement = document.getElementById('timer');
-            const stepCounter = document.getElementById('step-counter');
-            const progressBar = document.getElementById('progress-bar');
-            const placeholderText = document.querySelector('.placeholder-text');
-            const completionMessage = document.getElementById('completion-message');
-            
+            const sendBtn = document.getElementById('send-btn');
+            const promptInput = document.getElementById('prompt-input');
+            const chatArea = document.getElementById('chat-area');
+
+            // Lightbox elements
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const lightboxClose = document.getElementById('lightbox-close');
+
+
             let isGenerating = false;
-            let startTime;
-            let animationInterval;
-            let currentStep = 0;
-            
-            // Set canvas size
-            function resizeCanvas() {
-                const container = document.querySelector('.image-container');
+            let imageCount = 1;
+
+            // Auto-resize textarea
+            promptInput.addEventListener('input', function() {
+                this.style.height = 'auto'; // Reset height
+                // Need slight delay for scrollHeight recalc after line break/paste
+                requestAnimationFrame(() => {
+                    this.style.height = (this.scrollHeight) + 'px';
+                 });
+                 // Adjust chat padding dynamically? Maybe too complex for now.
+            });
+
+            function sendMessage() {
+                if (isGenerating || !promptInput.value.trim()) return;
+
+                const prompt = promptInput.value.trim();
+
+                // Add user message
+                const userMessage = document.createElement('div');
+                userMessage.className = 'user-message message';
+                // Sanitize or just display text content
+                userMessage.textContent = prompt;
+                chatArea.appendChild(userMessage);
+
+                // Clear input & resize
+                promptInput.value = '';
+                promptInput.style.height = 'auto';
+
+
+                // Add bot response placeholder
+                const botMessage = document.createElement('div');
+                botMessage.className = 'bot-message message';
+                botMessage.innerHTML = `
+                    <div class="status-text">Generating image based on: "${escapeHtml(prompt)}"</div>
+                    <div class="image-container">
+                        <img class="result-image" alt="Generated image for: ${escapeHtml(prompt)}">
+                        <canvas class="noise-overlay"></canvas>
+                    </div>
+                    <div class="generation-info">
+                        <span class="timer">Time: 0.00s</span>
+                        <span class="step-counter">Step: 0/25</span>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress"></div>
+                    </div>
+                `;
+                chatArea.appendChild(botMessage);
+
+                // Scroll to bottom smoothly
+                // Use timeout to ensure element is rendered before scrolling
+                setTimeout(() => {
+                   chatArea.scrollTop = chatArea.scrollHeight;
+                }, 0);
+
+
+                startGeneration(botMessage, prompt);
+            }
+
+             // Simple HTML escaping function
+            function escapeHtml(unsafe) {
+                if (!unsafe) return '';
+                return unsafe
+                     .replace(/&/g, "&")
+                     .replace(/</g, "<")
+                     .replace(/>/g, ">")
+                     .replace(/"/g, """)
+                     .replace(/'/g, "'");
+            }
+
+
+            function setupCanvas(messageElement) {
+                const noiseCanvas = messageElement.querySelector('.noise-overlay');
+                const container = messageElement.querySelector('.image-container');
+                if (!container) return null; // Check if container exists
+                // Debounce or wait for layout might be needed in complex scenarios
                 noiseCanvas.width = container.offsetWidth;
                 noiseCanvas.height = container.offsetHeight;
+                return noiseCanvas.getContext('2d');
             }
-            
-            window.addEventListener('resize', resizeCanvas);
-            resizeCanvas();
-            
-            // Generate random color noise
-            function generateNoise(opacity) {
-                ctx.clearRect(0, 0, noiseCanvas.width, noiseCanvas.height);
-                
-                const imageData = ctx.createImageData(noiseCanvas.width, noiseCanvas.height);
+
+            function generateNoise(ctx, opacity) {
+                if (!ctx || !ctx.canvas || ctx.canvas.width === 0 || ctx.canvas.height === 0) return; // Add check
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                const imageData = ctx.createImageData(ctx.canvas.width, ctx.canvas.height);
                 const data = imageData.data;
-                
                 for (let i = 0; i < data.length; i += 4) {
-                    data[i] = Math.floor(Math.random() * 256);     // red
-                    data[i + 1] = Math.floor(Math.random() * 256); // green
-                    data[i + 2] = Math.floor(Math.random() * 256); // blue
-                    data[i + 3] = 255 * opacity;                   // alpha
+                    // Use white noise for monochrome feel? Or keep color? Let's keep color for effect.
+                    const intensity = Math.floor(Math.random() * 256);
+                    data[i] = intensity; // R
+                    data[i + 1] = intensity; // G
+                    data[i + 2] = intensity; // B
+                    data[i + 3] = 255 * opacity; // alpha
                 }
-                
                 ctx.putImageData(imageData, 0, 0);
-                noiseCanvas.style.opacity = '1';
+                noiseCanvas = ctx.canvas; // Keep ref if needed
+                if (noiseCanvas) noiseCanvas.style.opacity = '1'; // Canvas opacity controls visibility
             }
-            
-            // Update timer display
-            function updateTimer() {
-                const elapsed = (Date.now() - startTime) / 1000;
-                timerElement.textContent = `Time: ${elapsed.toFixed(2)}s`;
-                return elapsed;
-            }
-            
-            // The main generation process
-            function startGeneration() {
-                if (isGenerating) return;
-                
+
+            function startGeneration(messageElement, prompt) {
                 isGenerating = true;
-                generateBtn.disabled = true;
-                currentStep = 0;
-                startTime = Date.now();
-                
-                // Hide completion message when starting new generation
-                completionMessage.style.opacity = '0';
-                
-                // Show the base image and set its opacity to 0
-                resultImage.src = 'image.jpeg';
-                resultImage.style.opacity = '0';
-                placeholderText.style.display = 'none';
-                
-                const totalSteps = 25;
-                const totalTime = 8.34; // seconds
-                const intervalTime = (totalTime * 1000) / totalSteps;
-                
-                animationInterval = setInterval(() => {
-                    const elapsed = updateTimer();
-                    currentStep++;
-                    
-                    // Update step counter
-                    stepCounter.textContent = `Step: ${currentStep}/${totalSteps}`;
-                    
-                    // Update progress bar
-                    const progress = (currentStep / totalSteps) * 100;
-                    progressBar.style.width = `${progress}%`;
-                    
-                    // Generate noise with decreasing opacity
-                    const noiseOpacity = 1 - (currentStep / totalSteps);
-                    generateNoise(noiseOpacity);
-                    
-                    // Gradually reveal the image
-                    resultImage.style.opacity = currentStep / totalSteps;
-                    
-                    // Check if we've reached the end
-                    if (currentStep >= totalSteps || elapsed >= totalTime) {
-                        clearInterval(animationInterval);
-                        
-                        // Make sure we show the final state
-                        resultImage.style.opacity = '1';
-                        noiseCanvas.style.opacity = '0';
-                        
-                        // Final timer update to match exact specified time
-                        if (elapsed < totalTime) {
-                            setTimeout(() => {
-                                updateTimer();
-                                // Show completion message
-                                completionMessage.style.opacity = '1';
-                                // Allow generating again
-                                isGenerating = false;
-                                generateBtn.disabled = false;
-                            }, (totalTime - elapsed) * 1000);
-                        } else {
-                            // Show completion message
-                            completionMessage.style.opacity = '1';
-                            // Allow generating again
-                            isGenerating = false;
-                            generateBtn.disabled = false;
+                sendBtn.disabled = true;
+
+                const resultImage = messageElement.querySelector('.result-image');
+                let noiseCanvas = messageElement.querySelector('.noise-overlay'); // Use let
+                const imageContainer = messageElement.querySelector('.image-container');
+                const timerElement = messageElement.querySelector('.timer');
+                const stepCounter = messageElement.querySelector('.step-counter');
+                const progressBar = messageElement.querySelector('.progress');
+                const statusTextElement = messageElement.querySelector('.status-text'); // Get status text div
+
+                let ctx; // Declare ctx here
+
+                // Wait a tick for layout to settle before getting dimensions
+                requestAnimationFrame(() => {
+                    ctx = setupCanvas(messageElement); // Setup canvas *after* layout
+
+                    let currentStep = 0;
+                    const startTime = Date.now();
+                    const totalSteps = 25;
+                    const totalTime = imageCount === 1 ? 4.5 : 3.2; // seconds
+                    const intervalTime = (totalTime * 1000) / totalSteps;
+
+                    const imageName = imageCount === 1 ? 'image.jpeg' : `image${imageCount}.jpeg`;
+
+                    resultImage.src = imageName;
+                    resultImage.style.opacity = '0';
+                    resultImage.style.cursor = 'default'; // Not clickable during generation
+
+
+                    resultImage.onerror = function() { // Use onerror
+                        console.warn(`Warning: ${imageName} not found. Using placeholder.`);
+                        if (!imageContainer) return; // Need container
+                        const tempCanvas = document.createElement('canvas');
+                        const aspectRatio = 4/3;
+                        tempCanvas.width = imageContainer.offsetWidth > 0 ? imageContainer.offsetWidth : 400; // Use container width or default
+                        tempCanvas.height = tempCanvas.width / aspectRatio;
+                        const tempCtx = tempCanvas.getContext('2d');
+
+                        tempCtx.fillStyle = '#111'; // Dark gray placeholder
+                        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+                        tempCtx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                        tempCtx.font = '16px "SF Pro Display", sans-serif';
+                        tempCtx.textAlign = 'center';
+                        tempCtx.fillText('Image Placeholder', tempCanvas.width / 2, tempCanvas.height / 2 - 10);
+                        tempCtx.font = '12px "SF Pro Display", sans-serif';
+                        tempCtx.fillText(`(${imageName} not found)`, tempCanvas.width / 2, tempCanvas.height / 2 + 10);
+
+                        resultImage.src = tempCanvas.toDataURL('image/jpeg');
+                         // In case of error, still proceed to finish state to avoid lockup
+                        finishGeneration(totalTime, resultImage, statusTextElement); // Pass elements
+                    };
+
+                    resultImage.onload = () => {
+                       // Start animation only after image (or placeholder) is loaded
+                       if (animationInterval === null) { // Prevent multiple intervals if onload fires late
+                           animationInterval = setInterval(runStep, intervalTime);
+                       }
+                    };
+
+                     let animationInterval = null; // Initialize interval ID
+
+                     function runStep() {
+                        if (!ctx && noiseCanvas) { // Try to get context again if missed first time
+                            ctx = noiseCanvas.getContext('2d');
                         }
+                        // if (!ctx) return; // Don't run if context isn't ready (handled below)
+
+                        const elapsed = updateTimer();
+                        currentStep++;
+
+                        stepCounter.textContent = `Step: ${currentStep}/${totalSteps}`;
+
+                        const progress = Math.min((currentStep / totalSteps) * 100, 100); // Ensure max 100
+                        progressBar.style.width = `${progress}%`;
+
+                        const noiseOpacity = Math.max(1 - (currentStep / totalSteps), 0); // Ensure min 0
+                        if(ctx) generateNoise(ctx, noiseOpacity); // Only generate if context exists
+
+                        resultImage.style.opacity = Math.min(currentStep / totalSteps, 1); // Ensure max 1
+
+                        if (currentStep >= totalSteps || elapsed >= totalTime) {
+                            clearInterval(animationInterval);
+                            animationInterval = null;
+
+                            resultImage.style.opacity = '1';
+                             if (noiseCanvas) {
+                                 const currentNoiseCanvas = noiseCanvas; // Capture current canvas
+                                 // Fade out noise slowly AFTER image is fully visible
+                                 currentNoiseCanvas.style.transition = 'opacity 0.5s ease-out';
+                                 currentNoiseCanvas.style.opacity = '0';
+                                 // Optional: Remove canvas after transition
+                                 // setTimeout(() => currentNoiseCanvas.remove(), 500);
+                             }
+
+
+                            const finalTime = Math.min(elapsed, totalTime); // Cap time display at totalTime
+                            timerElement.textContent = `Time: ${finalTime.toFixed(2)}s`;
+
+                            // Use timeout to ensure final state appears correctly even if finished early
+                            setTimeout(() => {
+                                 finishGeneration(finalTime, resultImage, statusTextElement); // Pass elements
+                            }, 50); // Short delay
+                        }
+                     }
+
+                     function updateTimer() {
+                        const elapsed = (Date.now() - startTime) / 1000;
+                        timerElement.textContent = `Time: ${elapsed.toFixed(2)}s`;
+                        return elapsed;
                     }
-                }, intervalTime);
+
+                    // Make sure interval starts if onload doesn't fire quickly (e.g. cached image)
+                    // Check if image is already complete (cached)
+                    if (resultImage.complete && resultImage.naturalWidth > 0 && animationInterval === null) {
+                         animationInterval = setInterval(runStep, intervalTime);
+                    }
+
+
+                }); // End of requestAnimationFrame
+
+
+                 function finishGeneration(finalTime, imgElement, statusEl) {
+                    // Update the status text content
+                    if (statusEl) {
+                        statusEl.textContent = `Generated in ${finalTime.toFixed(2)}s`;
+                        statusEl.style.color = 'var(--semi-white)'; // Keep it subdued
+                    }
+
+                    // Make image clickable and add listener
+                    if (imgElement) {
+                         imgElement.style.cursor = 'pointer';
+                         imgElement.removeEventListener('click', handleImageClick); // Remove old listener if any
+                         imgElement.addEventListener('click', handleImageClick);
+                    }
+
+
+                    imageCount++;
+                    isGenerating = false;
+                    sendBtn.disabled = false;
+
+                    // Scroll to bottom again in case image loaded late/changed height
+                     setTimeout(() => {
+                           chatArea.scrollTop = chatArea.scrollHeight;
+                     }, 50); // Slight delay
+                }
+
+            } // End of startGeneration
+
+            // --- Lightbox Functions ---
+            function handleImageClick(event) {
+                 const clickedImgSrc = event.target.src;
+                 if (clickedImgSrc && lightbox && lightboxImg) {
+                     lightboxImg.src = clickedImgSrc;
+                     lightbox.classList.add('show');
+                 }
             }
-            
-            // Set up event listeners
-            generateBtn.addEventListener('click', startGeneration);
-            
-            // Handle image load error
-            resultImage.addEventListener('error', function() {
-                // If image.jpeg doesn't exist, we'll create a placeholder
-                console.warn('Warning: image.jpeg not found. Using placeholder.');
-                
-                // Create a temporary canvas to draw a placeholder image
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = 800;  // 4:3 aspect ratio
-                tempCanvas.height = 600;
-                const tempCtx = tempCanvas.getContext('2d');
-                
-                // Fill with gray background
-                tempCtx.fillStyle = '#333';
-                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-                
-                // Add some text
-                tempCtx.fillStyle = '#fff';
-                tempCtx.font = '30px "SF Pro Display", sans-serif';
-                tempCtx.textAlign = 'center';
-                tempCtx.fillText('Image Placeholder', tempCanvas.width / 2, tempCanvas.height / 2);
-                tempCtx.font = '20px "SF Pro Display", sans-serif';
-                tempCtx.fillText('(image.jpeg not found)', tempCanvas.width / 2, tempCanvas.height / 2 + 40);
-                
-                // Use this canvas as our image source
-                resultImage.src = tempCanvas.toDataURL('image/jpeg');
+
+            function closeLightbox() {
+                 if (lightbox) {
+                     lightbox.classList.remove('show');
+                     // Optional: Clear image src after fade out
+                     setTimeout(() => {
+                         if (lightboxImg) lightboxImg.src = "";
+                     }, 300); // Match transition duration
+                 }
+            }
+
+            // Add listeners to close lightbox
+            if (lightbox) {
+                lightbox.addEventListener('click', (event) => {
+                    // Close only if clicking the background itself, not the image
+                    if (event.target === lightbox) {
+                        closeLightbox();
+                    }
+                });
+            }
+            if (lightboxClose) {
+                lightboxClose.addEventListener('click', closeLightbox);
+            }
+             // Optional: Close lightbox with Escape key
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && lightbox && lightbox.classList.contains('show')) {
+                    closeLightbox();
+                }
             });
+            // --- End Lightbox Functions ---
+
+
+            sendBtn.addEventListener('click', sendMessage);
+            promptInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+             // Initial focus on input
+             promptInput.focus();
         });
     </script>
 </body>
